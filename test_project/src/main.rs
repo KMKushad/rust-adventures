@@ -1,14 +1,31 @@
+#[derive(Debug)]
+struct Cube {
+    width: u32,
+    height: u32,
+    depth: u32,
+}
+
+impl Cube {
+    fn double(&mut self) -> &Cube {
+        self.height = self.height * 2;
+        self
+    }
+}
+
 fn main() {
-    let x = convert_to_celsius(25.0);
-    println!("{}", x);
-    let x = convert_to_fahrenheit(x);
-    println!("{}", x);
+    let mut cube1 = Cube {
+        width: 30,
+        height: 50,
+        depth: 30
+    };
+
+    println!("rect1 is {:?}", cube1);
+
+    cube1.double();
+
+    println!("rect1 after being doubled is {:?}", cube1);
 }
 
-fn convert_to_celsius(x: f32) -> f32 {
-    (x - 32.0) * 5.0 / 9.0
-}
-
-fn convert_to_fahrenheit(x: f32) -> f32 {
-    (x * 9.0 / 5.0) + 32.0
+fn area(cube: &Cube) -> u32 {
+    cube.width * cube.height * cube.depth
 }
