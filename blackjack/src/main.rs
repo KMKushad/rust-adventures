@@ -1,3 +1,5 @@
+use rand::Rng;
+
 #[derive(Debug)]
 #[derive(Clone)]
 struct Card {
@@ -21,57 +23,99 @@ impl Hand {
     fn draw_from(&mut self, deck: &mut Deck, card: Card) {
         for (idx, item) in deck.cards.iter().enumerate() {
             if item.name == card.name {
-                println!("{} {:?}", idx, item);
                 self.cards.push(card);
                 deck.cards.remove(idx);
                 break;
             }
         } 
     }
+
+    fn get_value(&self) -> i32 {
+        let mut sum = 0;
+        for card in self.cards.iter() {
+            sum += card.value;
+        }
+        sum
+    }
+
+    fn get_cards(&self) -> Vec<Card> {
+        self.cards.clone()
+    }
+}
+
+impl Deck {
+    fn select(&self) -> Card {
+        let idx = rand::thread_rng().gen_range(1..=self.cards.len());
+        self.cards[idx - 1].clone()
+    }
 }
 
 fn main() {
-    let queen_of_hearts: Card = Card {
+    let mut deck = init_deck();
+
+    let mut queen_of_hearts: Card = Card {
         name: String::from("Queen of Hearts"),
         value: 10,
     };
 
-    let king_of_hearts: Card = Card {
-        name: String::from("King of Hearts"),
-        value: 10,
+    let mut two_of_hearts: Card = Card {
+        name: String::from("Two of Hearts"),
+        value: 2,
     };
-
-    let jack_of_hearts: Card = Card {
-        name: String::from("Jack of Hearts"),
-        value: 10,
-    };
-
-    println!("{:?}", queen_of_hearts);
-    println!("{:?}", king_of_hearts);
-
-    let mut player_hand: Vec<Card> = Vec::new();
-
-    let mut deck = init_deck();
 
     let mut hand1: Hand = Hand {
-        cards: player_hand.clone(),
+        cards: Vec::new(),
     };
 
-    hand1.draw_from(&mut deck, queen_of_hearts);
-    hand1.draw_from(&mut deck, jack_of_hearts);
-    hand1.draw_from(&mut deck, king_of_hearts);
+    for _ in 0..2 {
+        let card = deck.select();
+        hand1.draw_from(&mut deck, card);
+    }
+    
+    let mut hand2: Hand = Hand {
+        cards: Vec::new(),
+    };
 
-    println!("{:#?}", deck);
+    hand2.draw_from(&mut deck, two_of_hearts);
+    hand2.draw_from(&mut deck, queen_of_hearts);
 
-    println!("{:#?}", hand1);
+    println!("{:#?}", hand1.get_cards());
+    println!("{:#?}", hand1.get_value());
+
+    println!("{:#?}", hand2.get_cards());
+    println!("{:#?}", hand2.get_value());
+
+    let winner = get_winner(hand1, hand2);
+    println!("{:#?}", winner);
 }
 
 fn hit() {
     
 }
 
-fn get_winner() {
-    
+fn get_winner(player1: Hand, player2: Hand) -> i8 {
+    if player1.get_value() == 21 {
+        1
+    }
+    else if player2.get_value() == 21 {
+        2
+    }
+    else if player1.get_value() > 21 {
+        2
+    }
+    else if player2.get_value() > 21 {
+        1
+    }
+    else if player1.get_value() > player2.get_value() {
+        1
+    }
+    else if player2.get_value() > player1.get_value() {
+        2
+    }
+    else {
+        0
+    }
+
 }
 
 fn init_deck() -> Deck {
