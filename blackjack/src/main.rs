@@ -53,12 +53,12 @@ impl Deck {
 fn main() {
     let mut deck = init_deck();
 
-    let mut queen_of_hearts: Card = Card {
+    let mut _queen_of_hearts: Card = Card {
         name: String::from("Queen of Hearts"),
         value: 10,
     };
 
-    let mut two_of_hearts: Card = Card {
+    let mut _two_of_hearts: Card = Card {
         name: String::from("Two of Hearts"),
         value: 2,
     };
@@ -76,8 +76,13 @@ fn main() {
         cards: Vec::new(),
     };
 
-    hand2.draw_from(&mut deck, two_of_hearts);
-    hand2.draw_from(&mut deck, queen_of_hearts);
+    for _ in 0..2 {
+        let card = deck.select();
+        hand2.draw_from(&mut deck, card);
+    }
+
+    //hand2.draw_from(&mut deck, two_of_hearts);
+    //hand2.draw_from(&mut deck, queen_of_hearts);
 
     println!("{:#?}", hand1.get_cards());
     println!("{:#?}", hand1.get_value());
