@@ -1,4 +1,5 @@
 use rand::Rng;
+use std::io;
 
 #[derive(Debug)]
 #[derive(Clone)]
@@ -35,6 +36,18 @@ impl Hand {
         for card in self.cards.iter() {
             sum += card.value;
         }
+        
+        if sum > 21 {
+            for card in self.cards.iter() {
+                if card.value == 11 {
+                    sum -= 10;
+                    if sum <= 21 {
+                        break;
+                    }
+                }
+            }
+        }
+
         sum
     }
 
@@ -48,77 +61,182 @@ impl Deck {
         let idx = rand::thread_rng().gen_range(1..=self.cards.len());
         self.cards[idx - 1].clone()
     }
+
+    fn get_cards(&self) -> Vec<Card> {
+        self.cards.clone()
+    }
 }
 
 fn main() {
     let mut deck = init_deck();
 
-    let mut _queen_of_hearts: Card = Card {
-        name: String::from("Queen of Hearts"),
-        value: 10,
-    };
-
-    let mut _two_of_hearts: Card = Card {
-        name: String::from("Two of Hearts"),
-        value: 2,
-    };
-
-    let mut hand1: Hand = Hand {
+    let mut dealer: Hand = Hand {
         cards: Vec::new(),
     };
 
     for _ in 0..2 {
         let card = deck.select();
-        hand1.draw_from(&mut deck, card);
+        dealer.draw_from(&mut deck, card);
     }
     
-    let mut hand2: Hand = Hand {
+    let mut player: Hand = Hand {
         cards: Vec::new(),
     };
 
     for _ in 0..2 {
         let card = deck.select();
-        hand2.draw_from(&mut deck, card);
+        player.draw_from(&mut deck, card);
     }
 
-    //hand2.draw_from(&mut deck, two_of_hearts);
-    //hand2.draw_from(&mut deck, queen_of_hearts);
+    println!("The dealer has a {} and one unrevealed card.\n", dealer.get_cards()[0].name);
 
-    println!("{:#?}", hand1.get_cards());
-    println!("{:#?}", hand1.get_value());
+    let mut player_standed = false;
 
-    println!("{:#?}", hand2.get_cards());
-    println!("{:#?}", hand2.get_value());
+    while player_standed == false {
+        let mut player_card_string = String::new();
 
-    let winner = get_winner(hand1, hand2);
-    println!("{:#?}", winner);
+        for (idx, card) in player.get_cards().iter().enumerate() {
+            if idx == 0 {
+                player_card_string = format!("{}", card.name)
+            }
+            else if player.get_cards().len() == 2 {
+                player_card_string = format!("You have a {} and a {} for a total of {} points.", 
+                    player.get_cards()[0].name, 
+                    player.get_cards()[1].name, 
+                    player.get_value()
+                )
+            }
+            else if idx != player.get_cards().len() - 1 {
+                player_card_string = format!("{}, {}", player_card_string, card.name);
+            }
+            else {
+                player_card_string = format!("You have a {}, and a {} for a total of {} points.", 
+                    player_card_string, 
+                    card.name, 
+                    player.get_value());
+            }
+        }
+
+        println!("{player_card_string}");
+
+        println!("You can choose to [h]it or [s]tand.");
+
+        let mut action = String::new();
+
+        io::stdin()
+            .read_line( &mut action)
+            .expect("Failed to read line");
+
+        if action.trim() == "h".to_string() {
+            let card = hit(&mut player, &mut deck, true);
+            println!("You drew a {}.", card.name);
+        }
+        else if action.trim() == "s".to_string() {
+            player_standed = true;
+        }
+
+        if player.get_value() >= 21 {
+            player_standed = true;
+        }
+    }
+
+    println!("\nThe dealer's unrevealed card was a {}.", dealer.get_cards()[1].name);
+
+    while dealer.get_value() < 17 {
+        let card = hit(&mut dealer, &mut deck, false);
+        println!("The dealer drew a {}.", card.name);
+    }
+
+    let result = get_winner(&dealer, &player);
+    println!("\n{}", result);
+
 }
 
-fn hit() {
-    
-}
+fn hit(player: &mut Hand, mut deck: &mut Deck, rigged: bool) -> Card {
+    if rigged {
+        if player.get_value() == 20 {
+            let mut aces = Vec::new();
 
-fn get_winner(player1: Hand, player2: Hand) -> i8 {
-    if player1.get_value() == 21 {
-        1
-    }
-    else if player2.get_value() == 21 {
-        2
-    }
-    else if player1.get_value() > 21 {
-        2
-    }
-    else if player2.get_value() > 21 {
-        1
-    }
-    else if player1.get_value() > player2.get_value() {
-        1
-    }
-    else if player2.get_value() > player1.get_value() {
-        2
+            for i in deck.get_cards() {
+                if i.value == 11 {
+                    aces.push(i);
+                }
+            }
+
+            let idx = rand::thread_rng().gen_range(1..=aces.len());
+
+            let ace = aces[idx-1].clone();
+
+            player.draw_from(&mut deck, ace.clone());
+
+            ace
+        }
+        else if 21 - player.get_value() < 12 {
+            let mut cards = Vec::new();
+
+            for i in deck.get_cards() {
+                if i.value == 21 - player.get_value() {
+                    cards.push(i);
+                }
+            }
+            
+            let idx = rand::thread_rng().gen_range(1..=cards.len());
+
+            let card = cards[idx-1].clone();
+
+            player.draw_from(&mut deck, card.clone());
+
+            card
+        }
+        else {
+            let mut aces = Vec::new();
+
+            for i in deck.get_cards() {
+                if i.value == 11 {
+                    aces.push(i);
+                }
+            }
+
+            let idx = rand::thread_rng().gen_range(1..=aces.len());
+
+            let ace = aces[idx-1].clone();
+
+            player.draw_from(&mut deck, ace.clone());
+            
+            ace
+        }
     }
     else {
-        0
+        let card: Card = deck.select();
+        player.draw_from(&mut deck, card.clone());
+        card
+    }
+}
+
+fn get_winner(dealer: &Hand, player: &Hand) -> String {
+    if dealer.get_value() == player.get_value() {
+        String::from("How did you get here? It's a tie.")
+    }
+    else if dealer.get_value() == 21 {
+        String::from("The dealer got a 21 and wins!")
+    }
+    else if player.get_value() == 21 {
+        String::from("The player got a 21 and wins!")
+    }
+    else if dealer.get_value() > 21 {
+        String::from("Oops! The dealer got over 21 and busted. The other player wins!")
+    }
+    else if player.get_value() > 21 {
+        String::from("Oops! The player got over 21 and busted. The dealer wins!")
+    }
+    else if dealer.get_value() > player.get_value() {
+        String::from("The dealer's card total was greater than the other player's card total. The dealer wins.")
+    }
+    else if player.get_value() > dealer.get_value() {
+        String::from("The player's card total was greater than the dealer's card total. The player wins.")
+    }
+    else {
+        String::from("How did you get here? It's a tie.")
     }
 
 }
@@ -174,7 +292,6 @@ fn init_deck() -> Deck {
             };
 
             deck.cards.push(card);
-
         }
     }
 
